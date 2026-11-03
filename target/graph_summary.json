@@ -1,0 +1,1 @@
+{"_invocation_id": "6d7c24aa-2fbd-47a0-9649-021406e931a0", "linked": {"0": {"name": "source.self_healing_pipeline.raw.orders", "type": "source", "succ": [1, 2]}, "1": {"name": "model.self_healing_pipeline.stg_orders", "type": "model"}, "2": {"name": "test.self_healing_pipeline.raw_orders_amount_is_numeric", "type": "test"}}}

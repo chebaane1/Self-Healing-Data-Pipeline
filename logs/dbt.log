@@ -762,3 +762,249 @@ from "pipeline"."main"."raw_orders"
 [0m23:02:59.938992 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x720f21e7a7e0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x720f20aeea20>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x720f1fc31d30>]}
 [0m23:02:59.939460 [debug] [MainThread]: Flushing usage events
 [0m23:03:00.664784 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m10:37:12.229932 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7cd7bc292300>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7cd7bc0fbb30>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7cd7bd42e0f0>]}
+
+
+============================== 10:37:12.244253 | e3bd409e-52c9-4a50-ba25-6328ce88221e ==============================
+[0m10:37:12.244253 [info ] [MainThread]: Running with dbt=1.12.6
+[0m10:37:12.244892 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'write_json': 'True', 'warn_error': 'None', 'no_print': 'None', 'empty': 'False', 'static_parser': 'True', 'cache_selected_only': 'False', 'quiet': 'False', 'partial_parse': 'True', 'log_format': 'default', 'log_path': '/workspace/logs', 'version_check': 'True', 'invocation_command': 'dbt run --profiles-dir .', 'send_anonymous_usage_stats': 'True', 'debug': 'False', 'indirect_selection': 'eager', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'maximum_seed_size_mib': '1', 'introspect': 'True', 'use_experimental_parser': 'False', 'target_path': 'None', 'profiles_dir': '.', 'log_cache_events': 'False', 'use_colors': 'True', 'hints_enabled': 'True', 'fail_fast': 'False'}
+[0m10:37:12.759445 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'project_id', 'label': 'e3bd409e-52c9-4a50-ba25-6328ce88221e', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7cd7baf15550>]}
+[0m10:37:12.872995 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'adapter_info', 'label': 'e3bd409e-52c9-4a50-ba25-6328ce88221e', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7cd7bae206b0>]}
+[0m10:37:12.876308 [info ] [MainThread]: Registered adapter: duckdb=1.11.1
+[0m10:37:13.047352 [debug] [MainThread]: checksum: 51d02630311552a6e800cb93e90baba7e88bf1e7864f0a575bb74755d63f3a45, vars: {}, profile: self_healing_pipeline, target: dev, version: 1.12.6
+[0m10:37:13.302450 [debug] [MainThread]: Partial parsing enabled: 1 files deleted, 0 files added, 1 files changed.
+[0m10:37:13.304027 [debug] [MainThread]: Partial parsing: updated file: self_healing_pipeline://models/staging/sources.yml
+[0m10:37:13.305357 [debug] [MainThread]: Partial parsing: deleted file: self_healing_pipeline://tests/raw_orders_amount_is_numeric.sql
+[0m10:37:15.011979 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'load_project', 'label': 'e3bd409e-52c9-4a50-ba25-6328ce88221e', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7cd7b71472c0>]}
+[0m10:37:15.456649 [debug] [MainThread]: Wrote artifact WritableManifest to /workspace/target/manifest.json
+[0m10:37:15.475404 [debug] [MainThread]: Wrote artifact SemanticManifest to /workspace/target/semantic_manifest.json
+[0m10:37:15.537444 [debug] [MainThread]: Wrote artifact OsiDocument to /workspace/target/osi_document.json
+[0m10:37:15.602378 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'resource_counts', 'label': 'e3bd409e-52c9-4a50-ba25-6328ce88221e', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7cd7baff50d0>]}
+[0m10:37:15.604039 [info ] [MainThread]: Found 1 model, 1 test, 1 source, 511 macros
+[0m10:37:15.605514 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'runnable_timing', 'label': 'e3bd409e-52c9-4a50-ba25-6328ce88221e', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7cd7badd2de0>]}
+[0m10:37:15.615868 [info ] [MainThread]: 
+[0m10:37:15.618041 [info ] [MainThread]: Concurrency: 1 threads (target='dev')
+[0m10:37:15.619431 [info ] [MainThread]: 
+[0m10:37:15.622000 [debug] [MainThread]: Acquiring new duckdb connection 'master'
+[0m10:37:15.625083 [debug] [ThreadPool]: Acquiring new duckdb connection 'list_pipeline'
+[0m10:37:15.737781 [debug] [ThreadPool]: Using duckdb connection "list_pipeline"
+[0m10:37:15.739755 [debug] [ThreadPool]: On list_pipeline: /* {"app": "dbt", "dbt_version": "1.12.6", "profile_name": "self_healing_pipeline", "target_name": "dev", "connection_name": "list_pipeline"} */
+
+    
+    select schema_name
+    from system.information_schema.schemata
+    
+    where lower(catalog_name) = '"pipeline"'
+    
+  
+  
+[0m10:37:15.740429 [debug] [ThreadPool]: Opening a new connection, currently in state init
+[0m10:37:15.797256 [debug] [ThreadPool]: SQL status: OK in 0.056 seconds
+[0m10:37:15.800830 [debug] [ThreadPool]: On list_pipeline: Close
+[0m10:37:15.803639 [debug] [ThreadPool]: Re-using an available connection from the pool (formerly list_pipeline, now create_pipeline_main)
+[0m10:37:15.805052 [debug] [ThreadPool]: Creating schema "database: "pipeline"
+schema: "main"
+"
+[0m10:37:15.827452 [debug] [ThreadPool]: Using duckdb connection "create_pipeline_main"
+[0m10:37:15.828580 [debug] [ThreadPool]: On create_pipeline_main: /* {"app": "dbt", "dbt_version": "1.12.6", "profile_name": "self_healing_pipeline", "target_name": "dev", "connection_name": "create_pipeline_main"} */
+
+    
+        select type from duckdb_databases()
+        where lower(database_name)='pipeline'
+        and type != 'duckdb'
+    
+  
+[0m10:37:15.829244 [debug] [ThreadPool]: Opening a new connection, currently in state closed
+[0m10:37:15.834941 [debug] [ThreadPool]: SQL status: OK in 0.005 seconds
+[0m10:37:15.844613 [debug] [ThreadPool]: Using duckdb connection "create_pipeline_main"
+[0m10:37:15.845554 [debug] [ThreadPool]: On create_pipeline_main: BEGIN
+[0m10:37:15.848070 [debug] [ThreadPool]: SQL status: OK in 0.002 seconds
+[0m10:37:15.849796 [debug] [ThreadPool]: Using duckdb connection "create_pipeline_main"
+[0m10:37:15.851080 [debug] [ThreadPool]: On create_pipeline_main: /* {"app": "dbt", "dbt_version": "1.12.6", "profile_name": "self_healing_pipeline", "target_name": "dev", "connection_name": "create_pipeline_main"} */
+
+    
+    
+        create schema if not exists "pipeline"."main"
+    
+[0m10:37:15.853678 [debug] [ThreadPool]: SQL status: OK in 0.001 seconds
+[0m10:37:15.859790 [debug] [ThreadPool]: On create_pipeline_main: COMMIT
+[0m10:37:15.861565 [debug] [ThreadPool]: Using duckdb connection "create_pipeline_main"
+[0m10:37:15.862388 [debug] [ThreadPool]: On create_pipeline_main: COMMIT
+[0m10:37:15.864122 [debug] [ThreadPool]: SQL status: OK in 0.001 seconds
+[0m10:37:15.864761 [debug] [ThreadPool]: On create_pipeline_main: Close
+[0m10:37:15.869721 [debug] [ThreadPool]: Re-using an available connection from the pool (formerly create_pipeline_main, now list_pipeline_main)
+[0m10:37:15.887646 [debug] [ThreadPool]: Using duckdb connection "list_pipeline_main"
+[0m10:37:15.890134 [debug] [ThreadPool]: On list_pipeline_main: BEGIN
+[0m10:37:15.891097 [debug] [ThreadPool]: Opening a new connection, currently in state closed
+[0m10:37:15.894108 [debug] [ThreadPool]: SQL status: OK in 0.003 seconds
+[0m10:37:15.895376 [debug] [ThreadPool]: Using duckdb connection "list_pipeline_main"
+[0m10:37:15.896290 [debug] [ThreadPool]: On list_pipeline_main: /* {"app": "dbt", "dbt_version": "1.12.6", "profile_name": "self_healing_pipeline", "target_name": "dev", "connection_name": "list_pipeline_main"} */
+select
+      'pipeline' as database,
+      table_name as name,
+      table_schema as schema,
+      CASE table_type
+        WHEN 'BASE TABLE' THEN 'table'
+        WHEN 'VIEW' THEN 'view'
+        WHEN 'LOCAL TEMPORARY' THEN 'table'
+        END as type
+    from system.information_schema.tables
+    where lower(table_schema) = 'main'
+    and lower(table_catalog) = 'pipeline'
+  
+[0m10:37:15.921962 [debug] [ThreadPool]: SQL status: OK in 0.024 seconds
+[0m10:37:15.927502 [debug] [ThreadPool]: On list_pipeline_main: ROLLBACK
+[0m10:37:15.931110 [debug] [ThreadPool]: On list_pipeline_main: Close
+[0m10:37:15.935717 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'runnable_timing', 'label': 'e3bd409e-52c9-4a50-ba25-6328ce88221e', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7cd7b0f83080>]}
+[0m10:37:15.938629 [debug] [MainThread]: Using duckdb connection "master"
+[0m10:37:15.939869 [debug] [MainThread]: On master: BEGIN
+[0m10:37:15.941081 [debug] [MainThread]: Opening a new connection, currently in state init
+[0m10:37:15.946387 [debug] [MainThread]: SQL status: OK in 0.005 seconds
+[0m10:37:15.948491 [debug] [MainThread]: On master: COMMIT
+[0m10:37:15.949016 [debug] [MainThread]: Using duckdb connection "master"
+[0m10:37:15.949511 [debug] [MainThread]: On master: COMMIT
+[0m10:37:15.952600 [debug] [MainThread]: SQL status: OK in 0.002 seconds
+[0m10:37:15.953547 [debug] [MainThread]: On master: Close
+[0m10:37:15.986131 [debug] [Thread-1 (]: Began running node model.self_healing_pipeline.stg_orders
+[0m10:37:15.987643 [info ] [Thread-1 (]: 1 of 1 START sql table model main.stg_orders ................................... [RUN]
+[0m10:37:15.988761 [debug] [Thread-1 (]: Re-using an available connection from the pool (formerly list_pipeline_main, now model.self_healing_pipeline.stg_orders)
+[0m10:37:15.989557 [debug] [Thread-1 (]: Began compiling node model.self_healing_pipeline.stg_orders
+[0m10:37:16.010312 [debug] [Thread-1 (]: Writing injected SQL for node "model.self_healing_pipeline.stg_orders"
+[0m10:37:16.011238 [debug] [Thread-1 (]: Began executing node model.self_healing_pipeline.stg_orders
+[0m10:37:16.013202 [debug] [Thread-1 (]: Using duckdb connection "model.self_healing_pipeline.stg_orders"
+[0m10:37:16.014025 [debug] [Thread-1 (]: On model.self_healing_pipeline.stg_orders: /* {"app": "dbt", "dbt_version": "1.12.6", "profile_name": "self_healing_pipeline", "target_name": "dev", "node_id": "model.self_healing_pipeline.stg_orders"} */
+select database_name, type from duckdb_databases()
+[0m10:37:16.014582 [debug] [Thread-1 (]: Opening a new connection, currently in state closed
+[0m10:37:16.018299 [debug] [Thread-1 (]: SQL status: OK in 0.003 seconds
+[0m10:37:16.021976 [debug] [Thread-1 (]: Using duckdb connection "model.self_healing_pipeline.stg_orders"
+[0m10:37:16.022704 [debug] [Thread-1 (]: On model.self_healing_pipeline.stg_orders: /* {"app": "dbt", "dbt_version": "1.12.6", "profile_name": "self_healing_pipeline", "target_name": "dev", "node_id": "model.self_healing_pipeline.stg_orders"} */
+
+                    select table_name, constraint_type from duckdb_constraints()
+                    where lower(database_name) = lower('pipeline')
+                      and lower(schema_name) = lower('main')
+                      and constraint_type in ('PRIMARY KEY', 'UNIQUE', 'FOREIGN KEY')
+                    
+[0m10:37:16.025734 [debug] [Thread-1 (]: SQL status: OK in 0.002 seconds
+[0m10:37:16.241669 [debug] [Thread-1 (]: Writing runtime sql for node "model.self_healing_pipeline.stg_orders"
+[0m10:37:16.242912 [debug] [Thread-1 (]: Using duckdb connection "model.self_healing_pipeline.stg_orders"
+[0m10:37:16.243593 [debug] [Thread-1 (]: On model.self_healing_pipeline.stg_orders: BEGIN
+[0m10:37:16.246074 [debug] [Thread-1 (]: SQL status: OK in 0.001 seconds
+[0m10:37:16.247227 [debug] [Thread-1 (]: Using duckdb connection "model.self_healing_pipeline.stg_orders"
+[0m10:37:16.248099 [debug] [Thread-1 (]: On model.self_healing_pipeline.stg_orders: /* {"app": "dbt", "dbt_version": "1.12.6", "profile_name": "self_healing_pipeline", "target_name": "dev", "node_id": "model.self_healing_pipeline.stg_orders"} */
+
+    
+
+    create  table
+      "pipeline"."main"."stg_orders__dbt_tmp"
+  
+    
+    as (
+      select
+    order_id,
+    customer_id,
+    cast(amount as float) as amount,
+    order_date
+from "pipeline"."main"."raw_orders"
+    );
+    
+  
+[0m10:37:16.262356 [debug] [Thread-1 (]: DuckDB adapter: duckdb error: Conversion Error: Could not convert string 'INVALID' to FLOAT when casting from source column amount
+
+LINE 13:     cast(amount as float) as amount,
+             ^
+[0m10:37:16.263182 [debug] [Thread-1 (]: DuckDB adapter: Error running SQL: /* {"app": "dbt", "dbt_version": "1.12.6", "profile_name": "self_healing_pipeline", "target_name": "dev", "node_id": "model.self_healing_pipeline.stg_orders"} */
+
+    
+
+    create  table
+      "pipeline"."main"."stg_orders__dbt_tmp"
+  
+    
+    as (
+      select
+    order_id,
+    customer_id,
+    cast(amount as float) as amount,
+    order_date
+from "pipeline"."main"."raw_orders"
+    );
+    
+  
+[0m10:37:16.266026 [debug] [Thread-1 (]: DuckDB adapter: Rolling back transaction.
+[0m10:37:16.267893 [debug] [Thread-1 (]: On model.self_healing_pipeline.stg_orders: ROLLBACK
+[0m10:37:16.275903 [debug] [Thread-1 (]: On model.self_healing_pipeline.stg_orders: Close
+[0m10:37:16.293019 [debug] [Thread-1 (]: Runtime Error in model stg_orders (models/staging/stg_orders.sql)
+  Conversion Error: Could not convert string 'INVALID' to FLOAT when casting from source column amount
+  
+  LINE 13:     cast(amount as float) as amount,
+               ^
+[0m10:37:16.300044 [debug] [Thread-1 (]: Sending event: {'category': 'dbt', 'action': 'run_model', 'label': 'e3bd409e-52c9-4a50-ba25-6328ce88221e', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7cd7b0f99eb0>]}
+[0m10:37:16.303009 [error] [Thread-1 (]: 1 of 1 ERROR creating sql table model main.stg_orders .......................... [[31mERROR[0m in 0.31s]
+[0m10:37:16.305225 [debug] [Thread-1 (]: Finished running node model.self_healing_pipeline.stg_orders
+[0m10:37:16.308257 [debug] [Thread-4 (]: Marking all children of 'model.self_healing_pipeline.stg_orders' to be skipped because of status 'error'.  Reason: Runtime Error in model stg_orders (models/staging/stg_orders.sql)
+  Conversion Error: Could not convert string 'INVALID' to FLOAT when casting from source column amount
+  
+  LINE 13:     cast(amount as float) as amount,
+               ^.
+[0m10:37:16.315155 [debug] [MainThread]: Using duckdb connection "master"
+[0m10:37:16.317525 [debug] [MainThread]: On master: BEGIN
+[0m10:37:16.319479 [debug] [MainThread]: Opening a new connection, currently in state closed
+[0m10:37:16.323046 [debug] [MainThread]: SQL status: OK in 0.004 seconds
+[0m10:37:16.324977 [debug] [MainThread]: On master: COMMIT
+[0m10:37:16.326167 [debug] [MainThread]: Using duckdb connection "master"
+[0m10:37:16.327123 [debug] [MainThread]: On master: COMMIT
+[0m10:37:16.332617 [debug] [MainThread]: SQL status: OK in 0.004 seconds
+[0m10:37:16.334562 [debug] [MainThread]: On master: Close
+[0m10:37:16.336394 [debug] [MainThread]: Connection 'master' was properly closed.
+[0m10:37:16.337410 [debug] [MainThread]: Connection 'model.self_healing_pipeline.stg_orders' was properly closed.
+[0m10:37:16.338096 [info ] [MainThread]: 
+[0m10:37:16.338498 [info ] [MainThread]: Finished running 1 table model in 0 hours 0 minutes and 0.72 seconds (0.72s).
+[0m10:37:16.339875 [debug] [MainThread]: Command end result
+[0m10:37:16.428927 [debug] [MainThread]: Wrote artifact WritableManifest to /workspace/target/manifest.json
+[0m10:37:16.441739 [debug] [MainThread]: Wrote artifact SemanticManifest to /workspace/target/semantic_manifest.json
+[0m10:37:16.454807 [debug] [MainThread]: Wrote artifact OsiDocument to /workspace/target/osi_document.json
+[0m10:37:16.486186 [debug] [MainThread]: Wrote artifact RunExecutionResult to /workspace/target/run_results.json
+[0m10:37:16.487218 [info ] [MainThread]: 
+[0m10:37:16.489427 [info ] [MainThread]: [31mCompleted with 1 error, 0 partial successes, and 0 warnings:[0m
+[0m10:37:16.490724 [info ] [MainThread]: 
+[0m10:37:16.491686 [error] [MainThread]: [[31mERROR[0m]: in model stg_orders (models/staging/stg_orders.sql)
+[0m10:37:16.492962 [error] [MainThread]:   Runtime Error in model stg_orders (models/staging/stg_orders.sql)
+  Conversion Error: Could not convert string 'INVALID' to FLOAT when casting from source column amount
+  
+  LINE 13:     cast(amount as float) as amount,
+               ^
+[0m10:37:16.493785 [info ] [MainThread]: 
+[0m10:37:16.494691 [info ] [MainThread]:   compiled code at target/compiled/self_healing_pipeline/models/staging/stg_orders.sql
+[0m10:37:16.495697 [info ] [MainThread]: 
+[0m10:37:16.496294 [info ] [MainThread]: Done. PASS=0 WARN=0 ERROR=1 SKIP=0 NO-OP=0 REUSED=0 TOTAL=1
+[0m10:37:16.501462 [debug] [MainThread]: Resource report: {"command_name": "run", "command_success": false, "command_wall_clock_time": 4.446839, "process_in_blocks": "36672", "process_kernel_time": 0.842797, "process_mem_max_rss": "176840", "process_out_blocks": "5920", "process_user_time": 8.909428}
+[0m10:37:16.503591 [debug] [MainThread]: Command `dbt run` failed at 10:37:16.503054 after 4.45 seconds
+[0m10:37:16.504812 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7cd7bc42d6d0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7cd7bb000380>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7cd7badd12b0>]}
+[0m10:37:16.505629 [debug] [MainThread]: Flushing usage events
+[0m10:37:17.362404 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m10:40:31.553521 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7e070c039dc0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7e070f1d00b0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7e070d8e4b30>]}
+
+
+============================== 10:40:31.585702 | 6c6b22fa-9e08-4eb6-a583-f8e4fdb1fc20 ==============================
+[0m10:40:31.585702 [info ] [MainThread]: Running with dbt=1.12.6
+[0m10:40:31.587223 [debug] [MainThread]: running dbt with arguments {'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'log_path': '/workspace/logs', 'empty': 'None', 'profiles_dir': '.', 'use_colors': 'True', 'log_format': 'default', 'write_json': 'True', 'hints_enabled': 'True', 'send_anonymous_usage_stats': 'True', 'target_path': 'None', 'debug': 'False', 'use_experimental_parser': 'False', 'no_print': 'None', 'partial_parse': 'True', 'quiet': 'False', 'cache_selected_only': 'False', 'log_cache_events': 'False', 'invocation_command': 'dbt ls --resource-type test --profiles-dir . --output name', 'maximum_seed_size_mib': '1', 'printer_width': '80', 'indirect_selection': 'eager', 'warn_error': 'None', 'static_parser': 'True', 'introspect': 'True', 'fail_fast': 'False', 'version_check': 'True'}
+[0m10:40:32.523749 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'project_id', 'label': '6c6b22fa-9e08-4eb6-a583-f8e4fdb1fc20', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7e0704164c80>]}
+[0m10:40:32.769335 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'adapter_info', 'label': '6c6b22fa-9e08-4eb6-a583-f8e4fdb1fc20', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7e070beec5c0>]}
+[0m10:40:32.776549 [info ] [MainThread]: Registered adapter: duckdb=1.11.1
+[0m10:40:33.021633 [debug] [MainThread]: checksum: 51d02630311552a6e800cb93e90baba7e88bf1e7864f0a575bb74755d63f3a45, vars: {}, profile: self_healing_pipeline, target: dev, version: 1.12.6
+[0m10:40:33.488995 [debug] [MainThread]: Partial parsing enabled: 0 files deleted, 0 files added, 0 files changed.
+[0m10:40:33.490910 [debug] [MainThread]: Nothing changed, skipping partial parsing.
+[0m10:40:33.491791 [debug] [MainThread]: Partial parsing enabled, no changes found, skipping parsing
+[0m10:40:33.523990 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'load_project', 'label': '6c6b22fa-9e08-4eb6-a583-f8e4fdb1fc20', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7e0703f41fa0>]}
+[0m10:40:34.020443 [debug] [MainThread]: Wrote artifact WritableManifest to /workspace/target/manifest.json
+[0m10:40:34.034427 [debug] [MainThread]: Wrote artifact SemanticManifest to /workspace/target/semantic_manifest.json
+[0m10:40:34.091035 [debug] [MainThread]: Wrote artifact OsiDocument to /workspace/target/osi_document.json
+[0m10:40:34.178135 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'resource_counts', 'label': '6c6b22fa-9e08-4eb6-a583-f8e4fdb1fc20', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7e0702b39a00>]}
+[0m10:40:34.181287 [info ] [MainThread]: Found 1 model, 1 test, 1 source, 511 macros
+[0m10:40:34.183809 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'runnable_timing', 'label': '6c6b22fa-9e08-4eb6-a583-f8e4fdb1fc20', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7e0702cbb380>]}
+[0m10:40:34.188211 [info ] [MainThread]: not_null_stg_orders_amount
+[0m10:40:34.192916 [debug] [MainThread]: Resource report: {"command_name": "list", "command_success": true, "command_wall_clock_time": 2.961088, "process_in_blocks": "25000", "process_kernel_time": 0.827664, "process_mem_max_rss": "166368", "process_out_blocks": "3448", "process_user_time": 8.419419}
+[0m10:40:34.195913 [debug] [MainThread]: Command `dbt ls` succeeded at 10:40:34.194576 after 2.96 seconds
+[0m10:40:34.198091 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7e070d9390a0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7e0704001ac0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7e0704001280>]}
+[0m10:40:34.199034 [debug] [MainThread]: Flushing usage events
+[0m10:40:34.997611 [debug] [MainThread]: An error was encountered while trying to flush usage events

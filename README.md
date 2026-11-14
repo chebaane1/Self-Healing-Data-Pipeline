@@ -6,7 +6,7 @@
 
 ## 📌 Executive Summary
 
-`run_pipeline.py` initializes a sample DuckDB source and runs the dbt models and tests. On failure, it writes diagnostics to `error_logs.txt`. `agent_repair.py` reads those logs, edits the identified SQL model in a temporary project copy, and retries dbt validation. The change is copied back to `models/` only after both `dbt run` and `dbt test` succeed. There is no GitHub or pull request integration.
+`run_pipeline.py` initializes a sample DuckDB source and runs the dbt models and tests. On failure, it writes diagnostics to `error_logs.txt`. `agent_repair.py` reads those logs and the current `raw_orders` schema from DuckDB, then edits only an explicitly allowed file in a temporary project copy: the identified SQL model, the dbt source/model YAML metadata, or `scripts/init_source.py` when logs indicate a resource/volume failure. Each successful edit is checked with `dbt run` and `dbt test`; only the changed, validated files are copied back. There is no OS-level sandbox, GitHub integration, or pull request workflow.
 
 ---
 
@@ -37,7 +37,7 @@
 | **Data Engine** | **DuckDB** | Local source and staging data. |
 | **Transformation** | **dbt Core + dbt-duckdb** | SQL models and data quality tests. |
 | **Agent** | **Instructor + Pydantic + LiteLLM** | Structured tool calls and bounded repair loop. |
-| **LLM** | **Ollama or a LiteLLM-compatible provider** | Local or hosted model inference. |
+| **LLM** | **Google Gemini via LiteLLM** | Hosted model inference using the Gemini API. |
 
 ---
 
@@ -45,9 +45,9 @@
 
 1. `run_pipeline.py` initializes `raw_orders` and runs dbt. The sample `INVALID` amount reproduces a cast failure.
 2. The orchestrator records the failure in `error_logs.txt`.
-3. The repair agent identifies the failing model and reads or edits only that SQL file in a temporary copy.
-4. It runs `dbt run` and `dbt test`, returning failure output to the model for another attempt, up to the configured limit.
-5. The SQL is promoted to the working tree only if both commands pass. No Git branch, deployment, or pull request is created.
+3. The repair agent identifies a failing model or explicitly reported dbt/ingestion file, and reads or edits only files permitted for that failure in a temporary copy. It receives the observed `raw_orders` column names and types as diagnostic metadata.
+4. It runs `dbt run` and `dbt test` after each write, returning failure output to the model for another attempt, up to the configured limit.
+5. Changed files are promoted to the working tree only if both commands pass and the source files have not changed during repair. This is application-level isolation, not an OS sandbox; no Git branch, deployment, or pull request is created.
 
 ---
 
@@ -55,7 +55,7 @@
 
 ### Prerequisites
 * Python 3.12 with `venv`
-* Ollama for the default local model, or credentials for another LiteLLM provider
+* A Google Gemini API key, available from Google AI Studio
 
 ### Step-by-Step Setup
 
@@ -64,8 +64,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
 
-# Optional: install the default local model used by agent_repair.py
-ollama pull qwen2.5-coder:7b
+# Add GEMINI_API_KEY=your-api-key to the ignored .env file
 
 # This sample pipeline is expected to fail on the INVALID amount and write error_logs.txt.
 python run_pipeline.py
@@ -75,4 +74,14 @@ python agent_repair.py --dry-run
 python agent_repair.py
 ```
 
-The agent defaults to `ollama_chat/qwen2.5-coder:7b`. Set `LITELLM_MODEL` or pass `--model` to use another provider. Validation is limited to three attempts by default; adjust it with `--max-iterations`.
+The agent defaults to `gemini/gemini-3.1-flash-lite`, a Gemini API free-tier model suited to agentic tasks. LiteLLM reads the API key from `GEMINI_API_KEY`. Set `LITELLM_MODEL` or pass `--model` to select another LiteLLM-supported model. Free-tier quotas apply. Validation is limited to three attempts by default; adjust it with `--max-iterations`.
+
+## Local Dashboard
+
+Start the local dashboard after installing the project dependencies:
+
+```bash
+python dashboard.py
+```
+
+Open the printed `http://127.0.0.1` address. The dashboard can run the pipeline, inspect the latest dbt result and DuckDB tables, and launch the repair agent in dry-run or promotion mode. Agent actions include short, evidence-based reasons; detailed dbt output stays in expandable event entries. The service binds to localhost only. Set `DASHBOARD_PORT` to choose a port; if it is occupied, the server selects an available one.

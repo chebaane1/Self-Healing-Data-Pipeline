@@ -1,1 +1,1 @@
-{"_invocation_id": "6c6b22fa-9e08-4eb6-a583-f8e4fdb1fc20", "linked": {"0": {"name": "source.self_healing_pipeline.raw.orders", "type": "source", "succ": [1]}, "1": {"name": "model.self_healing_pipeline.stg_orders", "type": "model", "succ": [2]}, "2": {"name": "test.self_healing_pipeline.not_null_stg_orders_amount.2546645448", "type": "test"}}}
+{"_invocation_id": "83f20542-7abf-43cd-b89b-934f546a84ea", "linked": {"0": {"name": "source.self_healing_pipeline.raw.orders", "type": "source", "succ": [1]}, "1": {"name": "model.self_healing_pipeline.stg_orders", "type": "model"}}}

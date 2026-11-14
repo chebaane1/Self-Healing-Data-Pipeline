@@ -16,7 +16,7 @@ def main():
             CREATE OR REPLACE TABLE raw_orders (
                 order_id INTEGER,
                 customer_id INTEGER,
-                amount VARCHAR,
+                total_amount VARCHAR,
                 order_date DATE
             )
             """

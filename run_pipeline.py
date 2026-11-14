@@ -5,10 +5,16 @@ import sys
 import sysconfig
 import traceback
 from pathlib import Path
+from typing import Callable
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 ERROR_LOG_PATH = PROJECT_ROOT / "error_logs.txt"
+
+
+def emit_progress(callback, event_type: str, message: str, **details) -> None:
+    if callback is not None:
+        callback({"type": event_type, "message": message, **details})
 
 def find_dbt_executable():
     configured_executable = os.environ.get("DBT_EXECUTABLE")
@@ -44,9 +50,17 @@ def save_failure(command, stdout, stderr, stacktrace):
     ERROR_LOG_PATH.write_text(diagnostic, encoding="utf-8")
 
 
-def main():
-    for command in build_commands():
+def main(on_event: Callable[[dict], None] | None = None):
+    steps = ("source", "dbt run", "dbt test")
+    emit_progress(on_event, "pipeline_started", "Exécution du pipeline démarrée.")
+    for step, command in zip(steps, build_commands()):
         print(f"\n$ {' '.join(command)}")
+        emit_progress(
+            on_event,
+            "pipeline_step_started",
+            f"Étape démarrée : {step}.",
+            step=step,
+        )
 
         try:
             result = subprocess.run(
@@ -61,6 +75,14 @@ def main():
             stdout = error.stdout or ""
             stderr = error.stderr or ""
             save_failure(command, stdout, stderr, stacktrace)
+            emit_progress(
+                on_event,
+                "pipeline_failed",
+                f"Échec de l’étape {step} (code {error.returncode}).",
+                step=step,
+                returncode=error.returncode,
+                output=(stdout or stderr)[-2000:],
+            )
 
             if stdout:
                 print(stdout, end="")
@@ -74,6 +96,13 @@ def main():
         except Exception:
             stacktrace = traceback.format_exc()
             save_failure(command, "", "", stacktrace)
+            emit_progress(
+                on_event,
+                "pipeline_failed",
+                f"Impossible de lancer l’étape {step}.",
+                step=step,
+                output=stacktrace[-2000:],
+            )
             print(
                 f"\nPipeline échoué pendant le lancement de la commande. "
                 f"Diagnostic complet : {ERROR_LOG_PATH}"
@@ -84,8 +113,15 @@ def main():
             print(result.stdout, end="")
         if result.stderr:
             print(result.stderr, end="", file=sys.stderr)
+        emit_progress(
+            on_event,
+            "pipeline_step_succeeded",
+            f"Étape terminée : {step}.",
+            step=step,
+        )
 
     print("\nPipeline réussi : toutes les commandes ont abouti.")
+    emit_progress(on_event, "pipeline_succeeded", "Toutes les étapes du pipeline ont réussi.")
     return 0
 
 

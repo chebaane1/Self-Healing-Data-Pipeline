@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f2f4f0">
+    <title>Pipeline console</title>
+    <link rel="stylesheet" href="/app.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Pipeline console, accueil">
+        <span class="brand-mark" aria-hidden="true">SP</span>
+        <span>SELF-HEALING <b> / </b> PIPELINE</span>
+      </a>
+      <div class="top-status"><span class="status-dot" id="status-dot"></span><span id="status-label">Connexion…</span></div>
+    </header>
+
+    <main>
+      <section class="intro">
+        <div>
+          <p class="eyebrow">CONSOLE LOCALE <span id="clock"></span></p>
+          <h1>État du pipeline</h1>
+          <p class="intro-copy">Exécution, qualité des données et décisions de réparation, au même endroit.</p>
+        </div>
+        <button class="button button-primary" id="run-pipeline" type="button">
+          <span aria-hidden="true">▶</span> Lancer le pipeline
+        </button>
+      </section>
+
+      <section class="summary-strip" aria-label="Résumé du dernier lancement">
+        <div><span class="summary-label">DERNIER RÉSULTAT DBT</span><strong id="dbt-result">Aucun résultat</strong></div>
+        <div><span class="summary-label">LIGNES SOURCE</span><strong id="source-rows">—</strong></div>
+        <div><span class="summary-label">MONTANTS INVALIDES</span><strong id="invalid-count">—</strong></div>
+        <div><span class="summary-label">DERNIÈRE EXÉCUTION</span><strong class="summary-small" id="dbt-time">—</strong></div>
+      </section>
+
+      <div class="workspace">
+        <section class="main-column">
+          <section class="section-block flow-section">
+            <div class="section-heading">
+              <div><p class="eyebrow">ORCHESTRATION</p><h2>Parcours d’exécution</h2></div>
+              <span class="run-state" id="run-state">EN ATTENTE</span>
+            </div>
+            <ol class="pipeline-flow" id="pipeline-flow">
+              <li data-step="source"><span class="flow-index">01</span><span class="flow-label">Préparer la source</span><span class="flow-status">En attente</span></li>
+              <li data-step="dbt run"><span class="flow-index">02</span><span class="flow-label">Construire les modèles</span><span class="flow-status">En attente</span></li>
+              <li data-step="dbt test"><span class="flow-index">03</span><span class="flow-label">Tester la qualité</span><span class="flow-status">En attente</span></li>
+              <li data-step="repair"><span class="flow-index">04</span><span class="flow-label">Réparer dans le bac à sable</span><span class="flow-status">À la demande</span></li>
+            </ol>
+          </section>
+
+          <section class="section-block data-section">
+            <div class="section-heading">
+              <div><p class="eyebrow">DUCKDB · MAIN</p><h2>Données observées</h2></div>
+              <button class="icon-button" id="refresh-data" type="button" title="Actualiser les données" aria-label="Actualiser les données">↻</button>
+            </div>
+            <div id="data-tables" class="data-tables"><p class="empty-state">Lecture de la base locale…</p></div>
+          </section>
+
+          <section class="section-block activity-section">
+            <div class="section-heading">
+              <div><p class="eyebrow">ÉVÉNEMENTS EN DIRECT</p><h2>Journal d’activité</h2></div>
+              <span class="live-label"><i></i> ACTUALISATION AUTO</span>
+            </div>
+            <ol id="event-list" class="event-list"><li class="empty-state">En attente d’activité.</li></ol>
+          </section>
+        </section>
+
+        <aside class="side-column">
+          <section class="section-block repair-panel">
+            <p class="eyebrow">AGENT DE RÉPARATION</p>
+            <h2>Valider un correctif</h2>
+            <p class="panel-copy">L’agent travaille sur une copie temporaire. Le SQL du projet ne change qu’après validation explicite.</p>
+            <div class="repair-target"><span class="target-dot"></span><span id="repair-target">Modèle détecté dans error_logs.txt</span></div>
+            <button class="button button-secondary" id="repair-dry-run" type="button">Tester sans modifier le projet</button>
+            <button class="button button-promote" id="repair-promote" type="button">Valider et promouvoir le SQL</button>
+            <p class="panel-footnote">La promotion exige une confirmation et seulement après réussite de <code>dbt run</code> et <code>dbt test</code>.</p>
+          </section>
+
+          <section class="section-block result-panel">
+            <p class="eyebrow">DERNIÈRE ERREUR</p>
+            <h2 id="error-title">Aucune erreur dbt récente</h2>
+            <pre id="error-message" class="error-message">Les détails du dernier résultat dbt apparaîtront ici.</pre>
+            <a class="file-link" href="/api/overview" target="_blank" rel="noreferrer">Artefacts dbt et aperçu JSON <span aria-hidden="true">↗</span></a>
+          </section>
+        </aside>
+      </div>
+      <footer><span>EXÉCUTION LOCALE · 127.0.0.1</span><span>Le raisonnement affiché est une justification courte, pas la pensée interne du modèle.</span></footer>
+    </main>
+    <script src="/app.js" defer></script>
+  </body>
+</html>

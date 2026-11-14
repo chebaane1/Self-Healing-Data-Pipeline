@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 import agent_repair
 import run_pipeline
@@ -19,9 +20,9 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 ERROR_LOG_PATH = PROJECT_ROOT / "error_logs.txt"
 MAX_VISIBLE_LOG_CHARS = 14000
 STAGES = (
-    ("introspection", "SCHÉMA SOURCE", "DuckDB · colonnes et types"),
-    ("strategy", "STRATÉGIE", "Analyse du diagnostic"),
-    ("patch", "CORRECTIF", "Fichier concerné"),
+    ("introspection", "SOURCE SCHEMA", "DuckDB · columns and types"),
+    ("strategy", "STRATEGY", "Failure analysis"),
+    ("patch", "PATCH", "Target file"),
     ("validation", "VALIDATION", "dbt run + dbt test"),
 )
 
@@ -44,7 +45,7 @@ st.markdown(
         --paper: #f3f4f1;
         --panel: #fbfbf9;
         --line: #d8dfd9;
-        --forest: #1e584d;
+        --forest: #0d5c46;
         --forest-deep: #163f39;
         --mint: #dfeee6;
         --coral: #c95d4d;
@@ -79,16 +80,6 @@ st.markdown(
     .pipe-arrow { position:relative; height:2px; background:var(--line); overflow:hidden; display:block; }
     .pipe-arrow:after { content:'›'; position:absolute; right:-2px; top:-14px; color:var(--forest); font: 1.7rem var(--sans); }
     .pipe-arrow.active { background:var(--forest); animation:flow 1.2s ease-in-out infinite; }
-    .agent-feed { max-height:320px; overflow-y:auto; padding:.15rem .65rem; border-left:1px solid var(--line); }
-    .agent-event { padding:.62rem .25rem; border-bottom:1px solid var(--line); }
-    .agent-event:last-child { border-bottom:0; }
-    .agent-event-label { color:var(--forest); font: .62rem var(--mono); letter-spacing:.04em; }
-    .agent-event-message { margin:.25rem 0 0; color:var(--ink); font-size:.83rem; line-height:1.45; overflow-wrap:anywhere; }
-    .agent-event-reason { margin:.25rem 0 0; color:var(--muted); font-size:.74rem; line-height:1.45; overflow-wrap:anywhere; }
-    .agent-event.action .agent-event-label { color:var(--amber); }
-    .agent-event.error .agent-event-label { color:var(--coral); }
-    .modal-heading { margin:0 0 .3rem; font:500 1.65rem 'Playfair Display', Georgia, serif; }
-    .modal-subtitle { color:var(--muted); font-size:.82rem; }
       .metric-band { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); margin:1.15rem 0 1.8rem; background:var(--panel); border-top:2px solid var(--forest); border-bottom:1px solid var(--line); }
       .metric-cell { padding: .9rem 1rem; border-right:1px solid var(--line); }
       .metric-cell:last-child { border-right:0; }
@@ -108,12 +99,16 @@ st.markdown(
       .stage.error .stage-state { color:var(--coral); }
       .section-rule { margin:1.6rem 0 .8rem; border-top:1px solid var(--line); }
       .caption { color:var(--muted); font-size:.82rem; }
-      .code-label { color:var(--muted); font: .66rem var(--mono); letter-spacing:.06em; text-transform:uppercase; margin-bottom:.35rem; }
+    .code-label { color:var(--muted); font:600 .82rem var(--mono); letter-spacing:.07em; text-transform:uppercase; margin-bottom:.45rem; }
+    .code-label.before { color:var(--coral); }
+    .code-label.after { color:var(--forest); }
       div[data-testid="stCode"] { border:1px solid var(--line); border-radius:3px; }
+    div[data-testid="column"]:has(.code-label.before) div[data-testid="stCode"] { border:2px solid var(--coral); border-radius:4px; box-shadow:0 0 0 1px rgba(201,93,77,.12); }
+    div[data-testid="column"]:has(.code-label.after) div[data-testid="stCode"] { border:2px solid var(--forest); border-radius:4px; box-shadow:0 0 0 1px rgba(13,92,70,.12); }
       .success-banner { padding:1rem 1.1rem; background:#e2eee6; border-left:4px solid var(--forest); color:#204c39; font-weight:600; }
       .failure-banner { padding:1rem 1.1rem; background:#f7e7e2; border-left:4px solid var(--coral); color:#843c34; font-weight:600; }
       .notice { padding:.85rem 1rem; background:#fff4df; border-left:3px solid var(--amber); color:#6f4a1f; font-size:.85rem; }
-      .status-pill { display:inline-flex; align-items:center; gap:.6rem; margin-top:1.1rem; padding:.4rem .7rem; border:1px solid var(--line); background:rgba(255,255,255,.35); border-radius: 999px; color: var(--muted); font: 600 .7rem var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+    .status-pill { display:inline-flex; align-items:center; gap:.6rem; margin-top:0; padding:.4rem .7rem; border:1px solid var(--line); background:rgba(255,255,255,.35); border-radius: 999px; color: var(--muted); font: 600 .7rem var(--mono); letter-spacing: .08em; text-transform: uppercase; transform:translateY(-.5rem); }
       .status-dot { width:.62rem; height:.62rem; border-radius:50%; display:inline-block; box-shadow: 0 0 0 2px rgba(255,255,255,.7); }
       .status-dot.ok { background:#2e9c63; }
       .status-dot.issue { background:#d85c4a; }
@@ -188,15 +183,15 @@ def default_pipeline_states() -> dict[str, str]:
 
 def render_stages(states: dict[str, str]) -> str:
     cards = []
-    labels = {"pending": "EN ATTENTE", "active": "EN COURS", "done": "TERMINÉ", "error": "ÉCHEC"}
+    labels = {"pending": "PENDING", "active": "IN PROGRESS", "done": "COMPLETE", "error": "FAILED"}
     for index, (key, title, copy) in enumerate(STAGES, start=1):
         state = states.get(key, "pending")
         cards.append(
             f'<div class="stage {state}">'
-            f'<div class="stage-no">0{index} / ÉTAPE</div>'
+            f'<div class="stage-no">0{index} / STEP</div>'
             f'<div class="stage-title">{title}</div>'
             f'<div class="stage-copy">{copy}</div>'
-            f'<div class="stage-state">{labels.get(state, "EN ATTENTE")}</div>'
+            f'<div class="stage-state">{labels.get(state, "PENDING")}</div>'
             "</div>"
         )
     return f'<div class="stage-list">{"".join(cards)}</div>'
@@ -205,9 +200,9 @@ def render_stages(states: dict[str, str]) -> str:
 def render_metrics(values: dict[str, str]) -> str:
     items = (
         ("INCIDENT", values.get("incident", "—")),
-        ("PIPELINE", values.get("pipeline", "En attente")),
-        ("RÉPARATION", values.get("repair", "En attente")),
-        ("MODE", values.get("mode", "Dry-run")),
+        ("PIPELINE", values.get("pipeline", "Pending")),
+        ("REPAIR", values.get("repair", "Pending")),
+        ("MODE", values.get("mode", "Dry run")),
     )
     return '<div class="metric-band">' + "".join(
         f'<div class="metric-cell"><div class="metric-label">{html.escape(label)}</div>'
@@ -239,52 +234,235 @@ def render_pipeline_map(states: dict[str, str], status: str = "idle") -> str:
         + f'<div class="pipe-arrow {arrow_class}"></div>'
         + node("transform", "02 · TRANSFORMATION", "dbt", "stg_orders · validation", status)
         + f'<div class="pipe-arrow {arrow_class}"></div>'
-        + node("target", "03 · TARGET", "stg_orders", "Table validée par dbt", status)
+        + node("target", "03 · TARGET", "stg_orders", "dbt-validated table", status)
         + "</div>"
     )
 
 
+def render_reasoning(events: list[dict[str, Any]], status: str = "running") -> str:
+    relevant_types = {
+        "pipeline_failed", "agent_waiting", "agent_action", "validation_started",
+        "validation_step_started", "validation_step_succeeded", "validation_failed",
+        "validation_succeeded", "repair_succeeded",
+    }
+    relevant = [event for event in events if event.get("type") in relevant_types]
+    if not relevant:
+        return ""
+
+    agent_started = any(
+        event.get("type") in {"agent_waiting", "agent_action"} for event in relevant
+    )
+
+    def short(value: Any, limit: int = 170) -> str:
+        text = " ".join(str(value or "").split())
+        return text if len(text) <= limit else text[:limit - 1].rstrip() + "…"
+
+    entries: list[dict[str, str]] = []
+
+    def add(key: str, icon: str, message: str, state: str) -> None:
+        entries.append({"key": key, "icon": icon, "message": message, "state": state})
+
+    def update(key: str, state: str, message: str | None = None) -> None:
+        for entry in reversed(entries):
+            if entry["key"] == key:
+                entry["state"] = state
+                if message is not None:
+                    entry["message"] = message
+                return
+
+    def complete_active(prefixes: tuple[str, ...]) -> None:
+        for entry in entries:
+            if entry["state"] == "active" and entry["key"].startswith(prefixes):
+                entry["state"] = "done"
+
+    schema_added = False
+    thinking_step = None
+    repair_succeeded = False
+    step_labels = {"source": "source preparation", "dbt run": "dbt run", "dbt test": "dbt test"}
+    action_labels = {
+        "read_sql_file": "Reviewing the target model",
+        "write_sql_file": "Applying the proposed change",
+        "read_project_file": "Reviewing project configuration",
+        "write_project_file": "Updating project configuration",
+        "finish_repair": "Checking the validated repair",
+    }
+
+    for event in relevant:
+        event_type = event.get("type")
+        iteration = event.get("iteration", 0)
+        if event_type == "pipeline_failed":
+            failed_step = step_labels.get(event.get("step"), "pipeline execution")
+            add("diagnostic", "🔍", f"Reading dbt logs and traceback · {failed_step} failed.", "done" if agent_started else "active")
+        elif event_type == "agent_waiting":
+            if not schema_added:
+                add("schema", "🧠", "Inspecting DuckDB schema (PRAGMA table_info).", "done")
+                schema_added = True
+            complete_active(("thinking:", "action:"))
+            step = event.get("step", 1)
+            thinking_step = step
+            message = (
+                "Reviewing validation results and refining the repair strategy."
+                if step > 1 else "Analyzing the failure and selecting a repair strategy."
+            )
+            add(f"thinking:{step}", "💡", message, "active")
+        elif event_type == "agent_action":
+            if thinking_step is not None:
+                update(f"thinking:{thinking_step}", "done")
+            action_name = event.get("action", "")
+            action_text = action_labels.get(action_name, "Preparing a targeted repair")
+            reason = short(event.get("reason"), 150)
+            if reason:
+                action_text += f" · {reason}"
+            add(f"strategy:{event.get('step', 0)}", "💡", action_text, "done")
+            target = event.get("model")
+            target_text = f" · {target}" if target else ""
+            add(
+                f"action:{event.get('step', 0)}",
+                "🛠️",
+                f"{action_labels.get(action_name, 'Applying repair action')}{target_text}.",
+                "active",
+            )
+        elif event_type == "validation_started":
+            complete_active(("action:",))
+            add(
+                f"validation:{iteration}",
+                "🧪",
+                f"Starting sandbox validation · iteration {iteration}.",
+                "active",
+            )
+        elif event_type == "validation_step_started":
+            command = event.get("command", "dbt")
+            message = (
+                "Preparing source data in the sandbox."
+                if command == "init_source"
+                else f"Running dbt {command} in the sandbox."
+            )
+            add(f"check:{iteration}:{command}", "🧪", message, "active")
+        elif event_type == "validation_step_succeeded":
+            command = event.get("command", "dbt")
+            message = (
+                "Source data prepared in the sandbox."
+                if command == "init_source"
+                else f"dbt {command} passed in the sandbox."
+            )
+            update(f"check:{iteration}:{command}", "done", message)
+        elif event_type == "validation_failed":
+            command = event.get("command", "dbt")
+            key = f"check:{iteration}:{command}"
+            failed_check = "source initialization" if command == "init_source" else f"dbt {command}"
+            message = f"{failed_check} failed · the agent is refining the fix."
+            if any(entry["key"] == key for entry in entries):
+                update(key, "error", message)
+            else:
+                add(key, "🧪", message, "error")
+            update(f"validation:{iteration}", "error", "Sandbox validation failed; the agent is revising the repair.")
+        elif event_type == "validation_succeeded":
+            update(
+                f"validation:{iteration}",
+                "done",
+                "Sandbox checks passed · dbt run and dbt test.",
+            )
+        elif event_type == "repair_succeeded":
+            repair_succeeded = True
+            complete_active(("thinking:", "action:", "validation:", "check:"))
+            target = event.get("model") or "target file"
+            add("promotion", "🎉", f"Validation passed · promoted the verified fix to {target}.", "done")
+
+    if status == "failed" and not repair_succeeded and not any(entry["state"] == "error" for entry in entries):
+        add("repair-failed", "⚠️", "Repair stopped before validation completed.", "error")
+
+    if repair_succeeded or status == "resolved":
+        state_class = "resolved"
+        heading = "Issue resolved and validated"
+    elif status == "failed":
+        state_class = "failed"
+        heading = "Repair stopped · diagnostic retained"
+    elif agent_started:
+        state_class = "running"
+        heading = "AI agent is fixing the issue…"
+    else:
+        state_class = "running"
+        heading = "Issue detected · preparing repair"
+
+    items = "".join(
+        f'<li class="activity-item {entry["state"]}">'
+        f'<span class="activity-symbol" aria-hidden="true">{html.escape(entry["icon"])}</span>'
+        f'<p class="activity-copy">{html.escape(entry["message"])}</p>'
+        f'<span class="activity-state" aria-hidden="true"></span></li>'
+        for entry in entries[-100:]
+    )
+    success = (
+        '<div class="reasoning-success">✓ Issue resolved and validated · dbt checks passed</div>'
+        if repair_succeeded or status == "resolved" else ""
+    )
+    styles = """
+      :root { color-scheme:light; --paper:#fbfbf9; --ink:#1b2d29; --muted:#556a64; --line:#d8dfd9; --forest:#0d5c46; --coral:#c95d4d; --mono:Consolas,monospace; }
+      * { box-sizing:border-box; }
+      html, body { margin:0; background:transparent; color:var(--ink); font-family:Aptos,'Segoe UI',sans-serif; }
+      .agent-reasoning { overflow:hidden; border:1px solid var(--line); border-top:2px solid var(--forest); background:var(--paper); }
+      .agent-reasoning.failed { border-top-color:var(--coral); }
+      .reasoning-head { display:flex; align-items:center; gap:.65rem; min-height:46px; padding:.7rem 1rem; border-bottom:1px solid var(--line); color:var(--ink); font:600 .72rem var(--mono); }
+      .reasoning-pulse { width:.8rem; height:.8rem; flex:0 0 auto; border:2px solid rgba(13,92,70,.2); border-top-color:var(--forest); border-radius:50%; animation:spin .8s linear infinite; }
+      .failed .reasoning-pulse { border-color:var(--coral); animation:none; }
+      .resolved .reasoning-pulse { border:0; border-radius:50%; background:var(--forest); animation:none; }
+      .reasoning-feed { max-height:218px; overflow-y:auto; overscroll-behavior:contain; scroll-behavior:smooth; margin:0; padding:.25rem 1rem .45rem; list-style:none; }
+    .activity-item { display:grid; grid-template-columns:20px minmax(0,1fr) 16px; align-items:start; gap:.55rem; padding:.65rem .1rem; border-bottom:1px solid var(--line); }
+    .activity-item:last-child { border-bottom:0; animation:arrive .22s ease both; }
+      .activity-symbol { font-size:.82rem; line-height:1.35; text-align:center; }
+      .activity-copy { margin:0; font-size:.75rem; line-height:1.45; overflow-wrap:anywhere; }
+      .activity-state { width:.72rem; height:.72rem; margin-top:.15rem; }
+      .activity-item.active .activity-state { border:2px solid rgba(13,92,70,.2); border-top-color:var(--forest); border-radius:50%; animation:spin .8s linear infinite; }
+      .activity-item.done .activity-state::before { content:'✓'; color:var(--forest); font-size:.78rem; font-weight:700; }
+      .activity-item.error .activity-state::before { content:'×'; color:var(--coral); font-size:.9rem; font-weight:700; }
+      .reasoning-success { padding:.68rem 1rem; border-top:1px solid #c9ded0; background:#e2eee6; color:#204c39; font-size:.76rem; font-weight:600; }
+    .resolution-summary { margin:0 0 1.2rem; padding:.75rem 1rem; border:1px solid var(--line); border-left:3px solid var(--forest); background:var(--panel); }
+    .resolution-summary.failed { border-left-color:var(--coral); }
+    .resolution-summary h3 { margin:0 0 .45rem; color:var(--ink-soft); font:600 .68rem var(--mono); letter-spacing:.06em; text-transform:uppercase; }
+    .resolution-summary p { margin:.25rem 0 0; color:var(--muted); font-size:.76rem; line-height:1.5; overflow-wrap:anywhere; }
+    .resolution-summary strong { color:var(--ink); font-weight:650; }
+      .resolved .reasoning-feed { display:none; }
+      @keyframes spin { to { transform:rotate(360deg); } }
+      @keyframes arrive { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+      @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms !important; scroll-behavior:auto !important; } }
+    """
+    return (
+        '<!doctype html><html lang="en"><head><meta charset="utf-8">'
+        f'<style>{styles}</style></head><body>'
+        f'<section class="agent-reasoning {state_class}" role="status" aria-live="polite">'
+        f'<div class="reasoning-head"><span class="reasoning-pulse" aria-hidden="true"></span>'
+        f'<span>{html.escape(heading)}</span></div>'
+        f'<ol class="reasoning-feed">{items}</ol>{success}</section>'
+        '<script>const feed=document.querySelector(".reasoning-feed");'
+        'if(feed)requestAnimationFrame(()=>feed.scrollTo({top:feed.scrollHeight,behavior:"smooth"}));</script>'
+        '</body></html>'
+    )
+
+
 class EventView:
-    def __init__(self, timeline_slot: Any, activity_slot: Any, pipeline_slot: Any | None = None):
-        self.timeline_slot = timeline_slot
-        self.activity_slot = activity_slot
+    def __init__(self, pipeline_slot: Any | None = None, reasoning_slot: Any | None = None):
         self.pipeline_slot = pipeline_slot
+        self.reasoning_slot = reasoning_slot
         self.states = default_stages()
         self.pipeline_states = default_pipeline_states()
         self.events: list[dict[str, Any]] = []
-        self.pipeline = "En attente"
-        self.repair = "En attente"
+        self.pipeline = "Pending"
+        self.repair = "Pending"
 
     def _render(self) -> None:
-        if self.timeline_slot is not None:
-            self.timeline_slot.markdown(render_stages(self.states), unsafe_allow_html=True)
         if self.pipeline_slot is not None:
             self.pipeline_slot.markdown(
-                render_pipeline_map(self.pipeline_states),
+                render_pipeline_map(self.pipeline_states, "ok" if self.pipeline == "PIPELINE OPERATIONAL" else "idle"),
                 unsafe_allow_html=True,
             )
-        if self.activity_slot is not None:
-            with self.activity_slot.container(height=280, border=False):
-                for event in self.events[-12:]:
-                    event_type = str(event.get("type", "event"))
-                    message = str(event.get("message", ""))
-                    action = str(event.get("action", ""))
-                    reason = str(event.get("reason", ""))
-                    css_class = "action" if action else (
-                        "error" if "failed" in event_type else ""
-                    )
-                    safe_type = html.escape(event_type.replace("_", " ").upper())
-                    safe_message = html.escape(message)
-                    detail = " · ".join(item for item in (action, reason) if item)
-                    safe_detail = html.escape(detail)
-                    st.markdown(
-                        f'<div class="agent-event {css_class}">'
-                        f'<div class="agent-event-label">{safe_type}</div>'
-                        f'<p class="agent-event-message">{safe_message}</p>'
-                        f'<p class="agent-event-reason">{safe_detail}</p>'
-                        "</div>",
-                        unsafe_allow_html=True,
-                    )
+        if self.reasoning_slot is not None:
+            reasoning_status = "resolved" if self.repair == "Validated" else "failed" if self.repair == "Failed" else "running"
+            self.reasoning_slot.empty()
+            with self.reasoning_slot.container():
+                components.html(
+                    render_reasoning(self.events, reasoning_status),
+                    height=98 if reasoning_status == "resolved" else 306,
+                    scrolling=False,
+                )
 
     def on_event(self, event: dict[str, Any]) -> None:
         self.events.append(event)
@@ -293,7 +471,7 @@ class EventView:
         step = event.get("step")
 
         if event_type == "pipeline_started":
-            self.pipeline = "En cours"
+            self.pipeline = "In progress"
             self.pipeline_states.update(
                 source="active", transform="pending", target="pending"
             )
@@ -307,13 +485,13 @@ class EventView:
                 self.pipeline_states["transform"] = "done"
                 self.pipeline_states["target"] = "active"
         elif event_type == "pipeline_succeeded":
-            self.pipeline = "Réussi"
+            self.pipeline = "Succeeded"
             self.states = {key: "done" for key, _, _ in STAGES}
             self.pipeline_states.update(
                 source="done", transform="done", target="done"
             )
         elif event_type == "pipeline_failed":
-            self.pipeline = "Échec détecté"
+            self.pipeline = "Failure detected"
             if step == "source":
                 self.pipeline_states["source"] = "failed"
             elif step == "dbt test":
@@ -323,7 +501,7 @@ class EventView:
         elif event_type == "repair_started":
             self.states["introspection"] = "done"
             self.states["strategy"] = "active"
-            self.repair = "Analyse en cours"
+            self.repair = "Analyzing"
         elif event_type == "agent_action":
             if action in {"write_sql_file", "write_project_file"}:
                 self.states["strategy"] = "done"
@@ -336,12 +514,14 @@ class EventView:
             self.states["validation"] = "active"
         elif event_type == "validation_failed":
             self.states["validation"] = "error"
-            self.repair = "Nouvelle tentative"
+            self.repair = "Retrying"
         elif event_type == "validation_succeeded":
             self.states["validation"] = "done"
         elif event_type == "repair_succeeded":
             self.states = {key: "done" for key, _, _ in STAGES}
-            self.repair = "Validée"
+            self.repair = "Validated"
+            self.pipeline = "PIPELINE OPERATIONAL"
+            self.pipeline_states.update(source="done", transform="done", target="done")
         self._render()
 
 
@@ -353,8 +533,6 @@ class LiveOutput(io.TextIOBase):
     def write(self, text: str) -> int:
         if text:
             self.parts.append(text)
-            visible = "".join(self.parts)[-MAX_VISIBLE_LOG_CHARS:]
-            self.output_slot.code(visible or "En attente des sorties…", language="text")
         return len(text)
 
     def flush(self) -> None:
@@ -402,7 +580,7 @@ def run_pipeline_once(
         "events": event_view.events,
         "pipeline_states": event_view.pipeline_states,
         "output": output.getvalue(),
-        "error": "" if pipeline_code == 0 or fresh_log else "Échec sans journal récent.",
+        "error": "" if pipeline_code == 0 or fresh_log else "Failure without a recent diagnostic log.",
     }
 
 
@@ -418,8 +596,6 @@ def run_agent_repair(
         relative_path: (PROJECT_ROOT / relative_path).read_text(encoding="utf-8")
         for relative_path in allowed_paths
     }
-    raw_log_slot = st.empty()
-    raw_log_slot.code(log_text[-MAX_VISIBLE_LOG_CHARS:] or "Journal vide", language="text")
     error_message = ""
     repair_code: int | None = 1
 
@@ -435,8 +611,8 @@ def run_agent_repair(
                 on_event=event_view.on_event,
             )
         except Exception as error:
-            error_message = f"Réparation interrompue : {type(error).__name__}: {error}"
-            event_view.repair = "Échec"
+            error_message = f"Repair interrupted: {type(error).__name__}: {error}"
+            event_view.repair = "Failed"
 
     after_files = {
         relative_path: (PROJECT_ROOT / relative_path).read_text(encoding="utf-8")
@@ -463,14 +639,14 @@ def run_agent_repair(
 def run_promoted_pipeline(
     state: dict[str, Any],
     pipeline_slot: Any,
-    timeline_slot: Any,
-    activity_slot: Any,
+    reasoning_slot: Any,
     output_slot: Any,
 ) -> dict[str, Any]:
-    presenter = EventView(timeline_slot, activity_slot, pipeline_slot)
+    presenter = EventView(pipeline_slot, reasoning_slot)
     presenter.events = list(state.get("events", []))
     presenter.states = dict(state.get("stages", default_stages()))
     presenter.pipeline_states = default_pipeline_states()
+    presenter.repair = "Validated"
     output = LiveOutput(output_slot)
     with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
         pipeline_code = run_pipeline.main(on_event=presenter.on_event)
@@ -482,48 +658,15 @@ def run_promoted_pipeline(
         stages=presenter.states,
         events=presenter.events,
         repair_status=(
-            "Validée · pipeline relancé"
+            "Validated · pipeline rerun"
             if pipeline_code == 0
-            else "Correctif validé · échec à la relance"
+            else "Fix validated · rerun failed"
         ),
         output=(state.get("output", "") + output.getvalue())[-MAX_VISIBLE_LOG_CHARS:],
     )
     if pipeline_code != 0 and ERROR_LOG_PATH.is_file():
         result["log_text"] = ERROR_LOG_PATH.read_text(encoding="utf-8", errors="replace")
     return result
-
-
-@st.dialog("Réparation de l’incident", width="large")
-def show_agent_dialog() -> None:
-    state = st.session_state.get("pipeline_result", {})
-    pipeline_slot = st.empty()
-    timeline_slot = st.empty()
-    activity_slot = st.empty()
-    output_slot = st.empty()
-    pipeline_slot.markdown(
-        render_pipeline_map(state.get("pipeline_states", default_pipeline_states())),
-        unsafe_allow_html=True,
-    )
-    presenter = EventView(timeline_slot, activity_slot, pipeline_slot)
-    presenter.events = list(state.get("events", []))
-    presenter.pipeline_states = dict(state.get("pipeline_states", default_pipeline_states()))
-    presenter.states = dict(state.get("stages", default_stages()))
-    presenter.states["introspection"] = "done"
-    presenter.states["strategy"] = "active"
-    presenter.repair = "Analyse en cours"
-    presenter._render()
-
-    st.markdown('<p class="modal-heading">Réparation</p>', unsafe_allow_html=True)
-    with st.spinner("Réparation en cours…"):
-        result = run_agent_repair(state, presenter, output_slot)
-    result["modal_complete"] = True
-    st.session_state["pipeline_result"] = result
-    st.session_state["agent_dialog_open"] = False
-    if result.get("repair_code") == 0 and result.get("promoted"):
-        st.session_state["restart_after_repair"] = True
-    else:
-        st.session_state["pipeline_running"] = False
-    st.rerun()
 
 
 def render_comparison(result: dict[str, Any]) -> None:
@@ -534,7 +677,7 @@ def render_comparison(result: dict[str, Any]) -> None:
         if path not in before_files or before_files[path] != content
     ]
     if not changed:
-        st.info("Aucun patch vérifié n’est disponible pour afficher un diff.")
+        st.info("No verified patch is available to display a diff.")
         return
 
     for path in changed:
@@ -542,21 +685,101 @@ def render_comparison(result: dict[str, Any]) -> None:
         after = after_files[path]
         left, right = st.columns(2)
         with left:
-            st.markdown(f'<div class="code-label">AVANT · {html.escape(path)}</div>', unsafe_allow_html=True)
-            st.code(before or "(fichier absent)", language=path.rsplit(".", 1)[-1])
+            st.markdown(f'<div class="code-label before">BEFORE · {html.escape(path)}</div>', unsafe_allow_html=True)
+            st.code(before or "(file missing)", language=path.rsplit(".", 1)[-1])
         with right:
-            st.markdown(f'<div class="code-label">APRÈS · {html.escape(path)}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="code-label after">AFTER · {html.escape(path)}</div>', unsafe_allow_html=True)
             st.code(after, language=path.rsplit(".", 1)[-1])
         diff = "".join(
             difflib.unified_diff(
                 before.splitlines(keepends=True),
                 after.splitlines(keepends=True),
-                fromfile=f"avant/{path}",
-                tofile=f"après/{path}",
+                fromfile=f"before/{path}",
+                tofile=f"after/{path}",
             )
         )
-        with st.expander("Voir le diff", expanded=False):
-            st.code(diff or "Aucune différence", language="diff")
+        with st.expander("View diff", expanded=False):
+            st.code(diff or "No changes", language="diff")
+
+
+def render_resolution_summary(result: dict[str, Any]) -> str:
+    events = result.get("events", [])
+    pipeline_failures = [event for event in events if event.get("type") == "pipeline_failed"]
+    validation_failures = [event for event in events if event.get("type") == "validation_failed"]
+    write_actions = [
+        event for event in events
+        if event.get("type") == "agent_action"
+        and event.get("action") in {"write_sql_file", "write_project_file"}
+    ]
+    repair_succeeded = next(
+        (event for event in reversed(events) if event.get("type") == "repair_succeeded"),
+        None,
+    )
+    if not pipeline_failures and not result.get("repair_code"):
+        return ""
+
+    def short(value: Any, limit: int = 220) -> str:
+        text = " ".join(str(value or "").split())
+        return text if len(text) <= limit else text[:limit - 1].rstrip() + "…"
+
+    original_failure = pipeline_failures[0] if pipeline_failures else {}
+    step = original_failure.get("step", "pipeline execution")
+    output = str(original_failure.get("output", ""))
+    error_detail = ""
+    for line in output.splitlines():
+        for marker in ("Binder Error:", "Compilation Error:", "Database Error:", "Runtime Error:"):
+            if marker in line:
+                error_detail = short(line.split(marker, 1)[1].strip())
+                break
+        if error_detail:
+            break
+    issue = f"{step} failed"
+    if error_detail:
+        issue += f": {error_detail}"
+
+    fix_action = write_actions[-1] if write_actions else None
+    if fix_action:
+        file_path = fix_action.get("model") or "the affected project file"
+        reason = short(fix_action.get("reason"))
+        verb = "Updated" if result.get("repair_code") == 0 else "Attempted to update"
+        fix = f"{verb} {file_path}"
+        if reason:
+            fix += f" · {reason}"
+    elif result.get("repair_code") == 0:
+        fix = "The agent confirmed the repair without reporting a file write."
+    else:
+        fix = "The agent did not complete a validated file change."
+
+    failed_validation = validation_failures[-1] if validation_failures else None
+    if result.get("repair_code") == 0 and repair_succeeded:
+        validation = "dbt run and dbt test passed in the sandbox."
+        if repair_succeeded.get("dry_run"):
+            validation += " The project file was not changed (dry run)."
+        elif result.get("promoted") and result.get("pipeline_code") == 0:
+            validation += " The fix was promoted and the pipeline rerun succeeded."
+        elif result.get("promoted"):
+            rerun_failure = pipeline_failures[-1] if len(pipeline_failures) > 1 else {}
+            rerun_step = rerun_failure.get("step", "pipeline")
+            validation += f" The fix was promoted, but the {rerun_step} rerun failed."
+        else:
+            validation += " The fix was validated but not promoted."
+        failed = False
+    elif failed_validation:
+        command = failed_validation.get("command", "sandbox validation")
+        validation = f"{command} failed in the sandbox; the agent could not complete a validated repair."
+        failed = True
+    else:
+        validation = short(result.get("error")) or "The agent stopped before validation completed."
+        failed = True
+
+    return (
+        f'<section class="resolution-summary{" failed" if failed else ""}" aria-label="Resolution summary">'
+        '<h3>Resolution summary</h3>'
+        f'<p><strong>Issue:</strong> {html.escape(issue)}</p>'
+        f'<p><strong>Fix:</strong> {html.escape(fix)}</p>'
+        f'<p><strong>Validation:</strong> {html.escape(validation)}</p>'
+        '</section>'
+    )
 
 
 def main() -> None:
@@ -569,31 +792,57 @@ def main() -> None:
         )
     with header_right:
         st.markdown('<div class="hero-mark">DUCKDB&nbsp; / &nbsp;DBT</div>', unsafe_allow_html=True)
-        spacer, launch_column = st.columns([1, 1])
-        with launch_column:
-            launch = st.button(
-                "Lancer",
-                icon=":material/play_arrow:",
-                help="Lancer le pipeline",
-                type="secondary",
-                disabled=bool(st.session_state.get("pipeline_running")),
-            )
 
     state = st.session_state.get("pipeline_result", {})
     last_code = state.get("pipeline_code")
-    if last_code is None:
-        status_label = "Pipeline opérationnelle"
+    if state.get("repair_code") == 0 and last_code == 0:
+        status_label = "Pipeline operational"
+        status_class = "ok"
+    elif state.get("repair_code") == 0 and "failed" in str(state.get("repair_status", "")).lower():
+        status_label = "Rerun failed"
+        status_class = "issue"
+    elif state.get("repair_code") == 0:
+        status_label = "Fix validated"
+        status_class = "ok"
+    elif last_code is None:
+        status_label = "Pipeline operational"
         status_class = "ok"
     elif last_code == 0:
-        status_label = "Dernier run OK"
+        status_label = "Last run passed"
         status_class = "ok"
     else:
-        status_label = "Dernier run en erreur"
+        status_label = "Last run failed"
         status_class = "issue"
-    st.markdown(
-        f'<div class="status-pill"><span class="status-dot {status_class}"></span><span>{html.escape(status_label)}</span></div>',
-        unsafe_allow_html=True,
-    )
+    status_column, launch_column, auto_column = st.columns([5, 1, 1.25], vertical_alignment="center")
+    with status_column:
+        st.markdown(
+            f'<div class="status-pill"><span class="status-dot {status_class}"></span><span>{html.escape(status_label)}</span></div>',
+            unsafe_allow_html=True,
+        )
+    with launch_column:
+        launch = st.button(
+            "Run pipeline",
+            icon=":material/play_arrow:",
+            help="Run the pipeline",
+            type="secondary",
+            disabled=bool(st.session_state.get("pipeline_running")),
+        )
+    auto_enabled = bool(st.session_state.get("auto_pipeline_enabled", False))
+    with auto_column:
+        toggle_auto = st.button(
+            "Auto: ON" if auto_enabled else "Auto: OFF",
+            icon=":material/autorenew:",
+            help="Start after 60 seconds, then run every 60 seconds while enabled.",
+            type="primary" if auto_enabled else "secondary",
+            key="auto_pipeline_toggle",
+        )
+    if toggle_auto:
+        st.session_state["auto_pipeline_enabled"] = not auto_enabled
+        if not auto_enabled:
+            st.session_state["auto_pipeline_next_run_at"] = time.monotonic() + 60
+        else:
+            st.session_state["auto_pipeline_next_run_at"] = None
+        st.rerun()
     pipeline_slot = st.empty()
     pipeline_slot.markdown(
         render_pipeline_map(
@@ -602,43 +851,59 @@ def main() -> None:
         ),
         unsafe_allow_html=True,
     )
+    reasoning_slot = st.empty()
 
-    timeline_slot = None
-    event_slot = None
     if state.get("events"):
-        presenter = EventView(timeline_slot, event_slot, pipeline_slot)
+        presenter = EventView(pipeline_slot, reasoning_slot)
         presenter.events = list(state["events"])
         presenter.pipeline_states = dict(state.get("pipeline_states", default_pipeline_states()))
         presenter.states = dict(state.get("stages", default_stages()))
+        presenter.repair = (
+            "Validated" if state.get("repair_code") == 0
+            else "Failed" if state.get("repair_code") not in (None, 0)
+            else state.get("repair_status", "Pending")
+        )
+        presenter.pipeline = "PIPELINE OPERATIONAL" if state.get("repair_code") == 0 else state.get("repair_status", "Pending")
         presenter._render()
 
-    if state.get("output"):
-        with st.expander("Logs", expanded=False):
-            st.code(state["output"][-MAX_VISIBLE_LOG_CHARS:], language="text")
-    if state.get("log_text") and state.get("pipeline_code") != 0:
-        with st.expander("Diagnostic", expanded=False):
-            st.code(state["log_text"][-MAX_VISIBLE_LOG_CHARS:], language="text")
-
     if state.get("repair_code") == 0:
-        if state.get("pipeline_code") == 0:
-            st.success("Pipeline réparé et relancé.")
-        elif not st.session_state.get("restart_after_repair"):
-            st.error("Correctif appliqué, mais le pipeline a de nouveau échoué.")
+        st.markdown(render_resolution_summary(state), unsafe_allow_html=True)
         render_comparison(state)
+    elif state.get("repair_code") is not None:
+        st.markdown(render_resolution_summary(state), unsafe_allow_html=True)
     elif state.get("pipeline_code") == 0:
-        st.success("Pipeline terminé.")
-    elif state.get("pipeline_code") not in (None, 0):
-        st.error(state.get("error") or "Le pipeline a échoué.")
+        st.success("Pipeline completed.")
 
-    if launch:
-        event_view = EventView(timeline_slot, event_slot, pipeline_slot)
+    def schedule_next_auto_run() -> None:
+        if st.session_state.get("auto_pipeline_enabled"):
+            st.session_state["auto_pipeline_next_run_at"] = time.monotonic() + 60
+
+    @st.fragment(run_every=60 if auto_enabled else None, key="auto_pipeline_timer")
+    def run_pipeline_automatically() -> None:
+        if not st.session_state.get("auto_pipeline_enabled"):
+            return
+        if (
+            st.session_state.get("pipeline_running")
+            or st.session_state.get("agent_running")
+            or st.session_state.get("restart_after_repair")
+        ):
+            return
+
+        now = time.monotonic()
+        next_run_at = st.session_state.get("auto_pipeline_next_run_at")
+        if next_run_at is None or now < next_run_at:
+            return
+
+        st.session_state["auto_pipeline_next_run_at"] = None
+        auto_reasoning_slot = st.empty()
+        event_view = EventView(None, auto_reasoning_slot)
         output_slot = st.empty()
         st.session_state["pipeline_running"] = True
-        with st.spinner("Pipeline en cours…"):
+        with st.spinner("Automatic pipeline run is starting…"):
             result = run_pipeline_once(event_view, output_slot)
         result.update(
             repair_code=None,
-            repair_status="En attente",
+            repair_status="Pending",
             stages=event_view.states,
             before_files={},
             after_files={},
@@ -646,29 +911,67 @@ def main() -> None:
         )
         st.session_state["pipeline_result"] = result
         if result["pipeline_failed"] and result["fresh_log"]:
-            st.session_state["agent_dialog_open"] = True
+            st.session_state["agent_running"] = True
         else:
             st.session_state["pipeline_running"] = False
+            schedule_next_auto_run()
+        st.rerun()
+
+    if launch:
+        event_view = EventView(pipeline_slot, reasoning_slot)
+        output_slot = st.empty()
+        st.session_state["pipeline_running"] = True
+        with st.spinner("Pipeline is running…"):
+            result = run_pipeline_once(event_view, output_slot)
+        result.update(
+            repair_code=None,
+            repair_status="Pending",
+            stages=event_view.states,
+            before_files={},
+            after_files={},
+            promoted=False,
+        )
+        st.session_state["pipeline_result"] = result
+        if result["pipeline_failed"] and result["fresh_log"]:
+            st.session_state["agent_running"] = True
+        else:
+            st.session_state["pipeline_running"] = False
+            schedule_next_auto_run()
+        st.rerun()
+
+    run_pipeline_automatically()
+
+    if st.session_state.get("agent_running"):
+        repair_state = st.session_state.get("pipeline_result", {})
+        presenter = EventView(pipeline_slot, reasoning_slot)
+        presenter.events = list(repair_state.get("events", []))
+        presenter.pipeline_states = dict(repair_state.get("pipeline_states", default_pipeline_states()))
+        presenter.states = dict(repair_state.get("stages", default_stages()))
+        output_slot = st.empty()
+        result = run_agent_repair(repair_state, presenter, output_slot)
+        st.session_state["pipeline_result"] = result
+        st.session_state["agent_running"] = False
+        if result.get("repair_code") == 0 and result.get("promoted"):
+            st.session_state["restart_after_repair"] = True
+        else:
+            st.session_state["pipeline_running"] = False
+            schedule_next_auto_run()
         st.rerun()
 
     if st.session_state.get("restart_after_repair"):
         st.session_state["restart_after_repair"] = False
-        event_view = EventView(None, None, pipeline_slot)
+        event_view = EventView(pipeline_slot, reasoning_slot)
         output_slot = st.empty()
-        with st.spinner("Pipeline relancé…"):
-            result = run_promoted_pipeline(
-                st.session_state.get("pipeline_result", {}),
-                pipeline_slot,
-                timeline_slot,
-                event_slot,
-                output_slot,
-            )
+        result = run_promoted_pipeline(
+            st.session_state.get("pipeline_result", {}),
+            pipeline_slot,
+            reasoning_slot,
+            output_slot,
+        )
         st.session_state["pipeline_result"] = result
         st.session_state["pipeline_running"] = False
+        schedule_next_auto_run()
         st.rerun()
-
-    if st.session_state.get("agent_dialog_open"):
-        show_agent_dialog()
 
 
 if __name__ == "__main__":

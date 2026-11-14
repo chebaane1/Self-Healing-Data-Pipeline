@@ -1,4 +1,5 @@
 .venv/
 .env
+.user.yml
 __pycache__/
 logs/dashboard_events.jsonl

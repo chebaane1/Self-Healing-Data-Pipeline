@@ -1,7 +1,6 @@
 duckdb>=1.1,<2.0
 dbt-duckdb>=1.8,<2.0
 instructor
-litellm[mcp]
+litellm
 pydantic
 python-dotenv
-streamlit>=1.40,<2
